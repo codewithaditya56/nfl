@@ -18,6 +18,9 @@ function LoginPage() {
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [loginType, setLoginType] = useState<"employee" | "admin">(
+    "employee"
+  );
   const [errors, setErrors] = useState<{ id?: string; pw?: string }>({});
   const [forgot, setForgot] = useState(false);
 
@@ -40,15 +43,45 @@ function LoginPage() {
     }
 
     // Demo login (replace with backend API later)
-    const user =
-      mockEmployees.find(
-        (e) => e.id === identifier || e.email === identifier
-      ) ?? mockEmployees[0];
+    const user = mockEmployees.find(
+  (e) => e.id === identifier || e.email === identifier
+);
 
-    login(user);
+if (!user) {
+  setErrors({
+    id: "User not found",
+  });
+  return;
+}
 
-    // Temporary redirect
-    navigate({ to: "/employee/dashboard" });
+if (
+  loginType === "admin" &&
+  user.role !== "admin"
+) {
+  setErrors({
+    id: "This account is not an Admin / HR account",
+  });
+  return;
+}
+
+if (
+  loginType === "employee" &&
+  user.role !== "employee"
+) {
+  setErrors({
+    id: "This account is not an Employee account",
+  });
+  return;
+}
+
+login(user);
+
+navigate({
+  to:
+    user.role === "admin"
+      ? "/admin/dashboard"
+      : "/employee/dashboard",
+});
 
     /*
     Backend integration example:
@@ -56,6 +89,7 @@ function LoginPage() {
     const response = await loginApi({
       identifier,
       password,
+      loginType,
     });
 
     login(response.user);
@@ -73,7 +107,38 @@ function LoginPage() {
     <PublicLayout>
       <section className="mx-auto max-w-6xl px-6 py-12 grid lg:grid-cols-2 gap-10 items-center">
         <div className="rounded-2xl border border-border bg-card p-8 shadow-md">
-          <h1 className="text-2xl font-bold">Welcome Back</h1>
+          {/* Login Type Selector */}
+          <div className="mb-6 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setLoginType("employee")}
+              className={`rounded-lg py-3 font-medium transition ${
+                loginType === "employee"
+                  ? "bg-primary text-white"
+                  : "border border-border bg-background hover:bg-muted"
+              }`}
+            >
+              Employee Login
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setLoginType("admin")}
+              className={`rounded-lg py-3 font-medium transition ${
+                loginType === "admin"
+                  ? "bg-primary text-white"
+                  : "border border-border bg-background hover:bg-muted"
+              }`}
+            >
+              Admin / HR Login
+            </button>
+          </div>
+
+          <h1 className="text-2xl font-bold">
+            {loginType === "employee"
+              ? "Employee Login"
+              : "Admin / HR Login"}
+          </h1>
 
           <p className="text-sm text-muted-foreground mt-1">
             Login to access the NFL Guest House Management System
@@ -113,7 +178,9 @@ function LoginPage() {
             </div>
 
             <Button type="submit" fullWidth size="lg">
-              Login
+              {loginType === "employee"
+                ? "Login as Employee"
+                : "Login as Admin / HR"}
             </Button>
 
             <Link to="/">
